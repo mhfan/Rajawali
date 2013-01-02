@@ -43,8 +43,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			
 			"void main() {\n" +
 			"	gl_Position = uMVPMatrix * aPosition;\n" +
-			"%RIPPLE_DISPLACE%" +
 			"	vTextureCoord = aTextureCoord;\n" +
+			"%RIPPLE_DISPLACE%" +
 			"}\n";
 		
 	protected static final String mFShader = 
@@ -140,11 +140,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		for(int i=0; i<mNumRipples; ++i) {
 			params.append("uniform vec2 uRipple").append(i).append("Origin;\n");
 			params.append("uniform float uRipple").append(i).append("Start;\n");
-			params.append("varying vec2 vDisplace").append(i).append(";\n");
 			
-			vertDispl.append("vDisplace").append(i).append(" = processRipple(uRipple").append(i).append("Origin , uTime - uRipple").append(i).append("Start);\n");
-			
-			fragDispl.append("texCoord += vDisplace").append(i).append(";\n");
+			vertDispl.append("vTextureCoord += processRipple(uRipple").append(i).append("Origin , uTime - uRipple").append(i).append("Start);\n");
 		}
 		
 		super.setShaders(
