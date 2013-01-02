@@ -26,15 +26,12 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			"		return vec2(0.0, 0.0);\n" +
 			"	}\n" +
 			"	float complete = time / uDuration;\n" +
-			"	vec2 pos = vec2(aPosition.y + .5, 1.0 - (aPosition.x + .5));" +
+			"	vec2 pos = vec2(aPosition.y + .5, 1.0 - (aPosition.x + .5));\n" +
 			"	pos *= uRatio;\n" +
 			"	origin *= uRatio;\n" +
 			"	float dist = distance(origin, pos);\n" +
 			"	float rad = uRippleSpeed * time;\n" +
-			"	float ripplePos = (dist - rad) / (uRippleSize / 2.0);\n" +
-			"	if (-1.0 > ripplePos || ripplePos > 1.0) {\n" +
-			"		return vec2(0.0, 0.0);\n" +
-			"	}\n" +
+			"	float ripplePos = clamp((dist - rad) / (uRippleSize / 2.0), -1.0, 1.0);\n" +
 			"	vec2 dir = normalize(origin - pos);\n" +
 			"	float amplitude = pow(1.0 - complete, 3.0) * uRippleSize;\n" +
 			"	vec2 displ = dir * sin(ripplePos * 3.14159) * amplitude;\n" +
@@ -44,7 +41,9 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			"void main() {\n" +
 			"	gl_Position = uMVPMatrix * aPosition;\n" +
 			"	vTextureCoord = aTextureCoord;\n" +
+
 			"%RIPPLE_DISPLACE%" +
+
 			"}\n";
 		
 	protected static final String mFShader = 
@@ -56,11 +55,10 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			"%RIPPLE_PARAMS%\n" +
 			
 			"void main() {\n" +
-			"	vec2 texCoord = vTextureCoord;\n" +
 			
 			"%RIPPLE_DISPLACE%" +
 			
-			"	gl_FragColor = texture2D(uFrameBufferTexture, texCoord);\n" +
+			"	gl_FragColor = texture2D(uFrameBufferTexture, vTextureCoord);\n" +
 			"}";
 	
 	private int[] muRippleOriginHandles;
