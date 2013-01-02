@@ -73,8 +73,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 	private int muRippleSpeedHandle;
 	private int muRippleSizeHandle;
 	
-	private float[][] mTouches;	
-	private float[] mTouchStartTimes;
+	private float[][] mRipples;	
+	private float[] mRippleStartTimes;
 	
 	private float mTime;
 	private float mDuration = 3.0f;
@@ -83,7 +83,7 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 	private float mRippleSize = 0.08f;
 	private int mNumRipples;
 	
-	private int currentTouchIndex;
+	private int currentRippleIndex;
 			
 	public TouchRippleFilter() {
 		this(3);
@@ -93,13 +93,13 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		super(mVShader, mFShader, false);
 		mNumRipples = numRipples;
 		
-		mTouches = new float[mNumRipples][2];
-		mTouchStartTimes = new float[mNumRipples];
+		mRipples = new float[mNumRipples][2];
+		mRippleStartTimes = new float[mNumRipples];
 		muRippleOriginHandles = new int[mNumRipples];
 		muRippleStartHandles = new int[mNumRipples];
 		
 		for(int i=0; i<mNumRipples; ++i) {
-			mTouchStartTimes[i] = -1000;
+			mRippleStartTimes[i] = -1000;
 		}
 		mRatio = new float[] { 1, 1 };
 		setShaders(mUntouchedVertexShader, mUntouchedFragmentShader);
@@ -120,8 +120,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 	public void useProgram() {
 		super.useProgram();
 		for(int i=0; i<mNumRipples; ++i) {
-			GLES20.glUniform2fv(muRippleOriginHandles[i], 1, mTouches[i], 0);
-			GLES20.glUniform1f(muRippleStartHandles[i], mTouchStartTimes[i]);
+			GLES20.glUniform2fv(muRippleOriginHandles[i], 1, mRipples[i], 0);
+			GLES20.glUniform1f(muRippleStartHandles[i], mRippleStartTimes[i]);
 		}
 		GLES20.glUniform1f(muTimeHandle, mTime);
 		GLES20.glUniform1f(muDurationHandle, mDuration);
@@ -163,15 +163,24 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		muRippleSizeHandle = getUniformLocation("uRippleSize");
 		muRippleSpeedHandle = getUniformLocation("uRippleSpeed");
 	}
-	
-	public void addTouch(float x, float y, float startTime) {
-		mTouches[currentTouchIndex][0] = x;
-		mTouches[currentTouchIndex][1] = y;
-		mTouchStartTimes[currentTouchIndex] = startTime;
-		currentTouchIndex++;
-		if(currentTouchIndex == mNumRipples) currentTouchIndex = 0;
+
+	public void addRipple(float x, float y, float startTime) {
+		mRipples[currentRippleIndex][0] = x;
+		mRipples[currentRippleIndex][1] = y;
+		mRippleStartTimes[currentRippleIndex] = startTime;
+		currentRippleIndex++;
+		if (currentRippleIndex == mNumRipples)
+			currentRippleIndex = 0;
 	}
-	
+
+	/**
+	 * @deprecated Replaced by {@link #addRipple}
+	 */
+	@Deprecated
+	public void addTouch(float x, float y, float startTime) {
+		addRipple(x, y, startTime);
+	}
+
 	public void setTime(float time) {
 		mTime = time;
 	}
