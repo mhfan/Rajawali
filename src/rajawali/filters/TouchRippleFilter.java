@@ -21,15 +21,23 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			
 			"varying vec2 vTextureCoord;\n" +
 			
-			"vec2 processTouch(vec2 touch, float time) {\n" +
+			"vec2 processRipple(vec2 origin, float time) {\n" +
+			"	if (time > uDuration) {\n"+
+			"		return vec2(0.0, 0.0);\n" +
+			"	}\n" +
+			"	float complete = time / uDuration;\n" +
 			"	vec2 pos = vec2(aPosition.y + .5, 1.0 - (aPosition.x + .5));" +
 			"	pos *= uRatio;\n" +
-			"	touch *= uRatio;\n" +
-			"	vec2 diff = normalize(touch - pos);\n" +
-			"	float dist = distance(touch, pos);\n" +
-			"	float strength = max(0.0, uDuration-time) * 0.01;\n" +
-			"	float timedist = min(1.0, time / (dist * uDuration));\n" +
-			"	vec2 displ = diff * cos(dist*uRippleSize-time*uRippleSpeed) * strength * timedist;\n" +
+			"	origin *= uRatio;\n" +
+			"	float dist = distance(origin, pos);\n" +
+			"	float rad = uRippleSpeed * time;\n" +
+			"	float ripplePos = (dist - rad) / (uRippleSize / 2.0);\n" +
+			"	if (-1.0 > ripplePos || ripplePos > 1.0) {\n" +
+			"		return vec2(0.0, 0.0);\n" +
+			"	}\n" +
+			"	vec2 dir = normalize(origin - pos);\n" +
+			"	float amplitude = pow(1.0 - complete, 3.0) * uRippleSize;\n" +
+			"	vec2 displ = dir * sin(ripplePos * 3.14159) * amplitude;\n" +
 			"	return displ;\n" +
 			"}\n" +
 			
@@ -55,9 +63,9 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 			"	gl_FragColor = texture2D(uFrameBufferTexture, texCoord);\n" +
 			"}";
 	
-	private int[] muTouchHandles;
+	private int[] muRippleOriginHandles;
 	
-	private int[] muTouchStartHandles;
+	private int[] muRippleStartHandles;
 	
 	private int muTimeHandle;
 	private int muDurationHandle;
@@ -69,10 +77,10 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 	private float[] mTouchStartTimes;
 	
 	private float mTime;
-	private float mDuration = 6.0f;
+	private float mDuration = 3.0f;
 	private float[] mRatio;
-	private float mRippleSpeed = 10;
-	private float mRippleSize = 42;
+	private float mRippleSpeed = 0.3f;
+	private float mRippleSize = 0.08f;
 	private int mNumRipples;
 	
 	private int currentTouchIndex;
@@ -87,8 +95,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		
 		mTouches = new float[mNumRipples][2];
 		mTouchStartTimes = new float[mNumRipples];
-		muTouchHandles = new int[mNumRipples];
-		muTouchStartHandles = new int[mNumRipples];
+		muRippleOriginHandles = new int[mNumRipples];
+		muRippleStartHandles = new int[mNumRipples];
 		
 		for(int i=0; i<mNumRipples; ++i) {
 			mTouchStartTimes[i] = -1000;
@@ -97,9 +105,9 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		setShaders(mUntouchedVertexShader, mUntouchedFragmentShader);
 	}
 	
-	public TouchRippleFilter(float duration, float rippleSpeed, float rippleSize) {
+	public TouchRippleFilter(float rippleDuration, float rippleSpeed, float rippleSize) {
 		this();
-		mDuration = duration;
+		mDuration = rippleDuration;
 		mRippleSpeed = rippleSpeed;
 		mRippleSize = rippleSize;
 	}
@@ -112,8 +120,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 	public void useProgram() {
 		super.useProgram();
 		for(int i=0; i<mNumRipples; ++i) {
-			GLES20.glUniform2fv(muTouchHandles[i], 1, mTouches[i], 0);
-			GLES20.glUniform1f(muTouchStartHandles[i], mTouchStartTimes[i]);
+			GLES20.glUniform2fv(muRippleOriginHandles[i], 1, mTouches[i], 0);
+			GLES20.glUniform1f(muRippleStartHandles[i], mTouchStartTimes[i]);
 		}
 		GLES20.glUniform1f(muTimeHandle, mTime);
 		GLES20.glUniform1f(muDurationHandle, mDuration);
@@ -130,11 +138,11 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 		StringBuffer fragDispl = new StringBuffer();
 		
 		for(int i=0; i<mNumRipples; ++i) {
-			params.append("uniform vec2 uTouch").append(i).append(";\n");
-			params.append("uniform float uTouch").append(i).append("Start;\n");
+			params.append("uniform vec2 uRipple").append(i).append("Origin;\n");
+			params.append("uniform float uRipple").append(i).append("Start;\n");
 			params.append("varying vec2 vDisplace").append(i).append(";\n");
 			
-			vertDispl.append("vDisplace").append(i).append(" = processTouch(uTouch").append(i).append(", uTime - uTouch").append(i).append("Start);\n");
+			vertDispl.append("vDisplace").append(i).append(" = processRipple(uRipple").append(i).append("Origin , uTime - uRipple").append(i).append("Start);\n");
 			
 			fragDispl.append("texCoord += vDisplace").append(i).append(";\n");
 		}
@@ -145,8 +153,8 @@ public class TouchRippleFilter extends AMaterial implements IPostProcessingFilte
 				);
 		
 		for(int i=0; i<mNumRipples; ++i) {
-			muTouchHandles[i] = getUniformLocation("uTouch" + i);
-			muTouchStartHandles[i] = getUniformLocation("uTouch"+i+"Start");
+			muRippleOriginHandles[i] = getUniformLocation("uRipple"+i+"Origin");
+			muRippleStartHandles[i] = getUniformLocation("uRipple"+i+"Start");
 		}
 		
 		muTimeHandle = getUniformLocation("uTime");
