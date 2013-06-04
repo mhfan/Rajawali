@@ -324,6 +324,7 @@ public abstract class AMaterial extends AFrameTask {
 		case SPHERE_MAP:
 			textureName = "uSphereMapTexture";
 			break;
+		default: ;
 		}
 
 		// -- check if there are already diffuse texture in the list

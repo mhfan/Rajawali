@@ -873,6 +873,7 @@ public class RajawaliScene extends AFrameTask {
 				case REPLACE:
 					handleReplaceTask(taskObject);
 					break;
+				default: ;
 				}
 				//Retrieve the next task
 				taskObject = mFrameTaskQueue.poll();
