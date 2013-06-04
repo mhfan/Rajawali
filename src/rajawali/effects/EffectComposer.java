@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import rajawali.Camera2D;
 import rajawali.materials.textures.ATexture.FilterType;
 import rajawali.materials.textures.ATexture.WrapType;
-import rajawali.primitives.Plane;
+//import rajawali.primitives.Plane;
 import rajawali.primitives.ScreenQuad;
 import rajawali.renderer.RajawaliRenderer;
 import rajawali.renderer.RenderTarget;
