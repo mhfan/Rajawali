@@ -68,6 +68,19 @@
     -->
     <import file="custom_rules.xml" optional="true" />
 
+    <target name="-post-build" >
+	<symlink link="${out.absolute.dir}/${ant.project.name}.jar"
+	    resource="${out.library.jar.file}" overwrite="true" />
+	<symlink link="${out.absolute.dir}/rajawali.jar"
+	    resource="${out.library.jar.file}" overwrite="true" />
+
+    <!--
+	<jar destfile="${out.library.jar.file}" update="yes" >
+	    <fileset dir="." includes="res/raw/**" />
+	</jar>
+    -->
+    </target>
+
     <!-- Import the actual build file.
 
          To customize existing targets, there are two options:
